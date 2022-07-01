@@ -89,44 +89,99 @@ exports.getSauceById = async (req, res, next) => {
 
 exports.setLikes = async (req, res, next) => {
     try {
-        const sauce = await Sauce.findOne({ _id: req.params.id });
-        if (!sauce) {
-            res.status(404).json({
-                error: new Error('No such Sauce!')
-            });
-        }
+        // const sauce = await Sauce.findOne({ _id: req.params.id });
+        // if (!sauce) {
+        //     res.status(404).json({
+        //         error: new Error('No such Sauce!')
+        //     });
+        // }
 
         let like = req.body.like;
         let userId = req.body.userId;
         let sauceId = req.params.id;
 
         console.log(userId);
-        if (like > 0) {
+        if (like === 1) {
             try {
-                const sauceUpdate = await sauce.updateOne(
+                const sauceUpdate = await Sauce.updateOne(
                     {
                         _id: sauceId
                     },
                     {
                         $push: {
                             usersLiked: userId
-                        }
-                    },
-                    {
+                        },
                         $inc: {
                             likes: +1
                         }
-                    },
-                    {
-                        $inc: {
-                            lidfdf: +1
-                        }
-                    })
+                    }
+                )
                 res.status(200).json(sauceUpdate);
             } catch (error) {
                 res.status(400).json(error);
             }
 
+        }
+        if (like === -1) {
+            try {
+                const sauceUpdate = await Sauce.updateOne(
+                    {
+                        _id: sauceId
+                    },
+                    {
+                        $push: {
+                            usersLiked: userId
+                        },
+                        $inc: {
+                            dislikes: +1
+                        }
+                    }
+                )
+                res.status(200).json(sauceUpdate);
+            } catch (error) {
+                res.status(400).json(error);
+            }
+
+        }
+
+        if (like === 0) {
+            try {
+                const sauce = await Sauce.findOne({ _id: sauceId })
+                if (sauce.usersLiked.includes(userId)) {
+                    const sauceUpdate = await Sauce.updateOne(
+                        {
+                            _id: sauceId
+                        },
+                        {
+                            $push: {
+                                usersLiked: userId
+                            },
+                            $inc: {
+                                likes: -1
+                            }
+                        }
+                    )
+                    res.status(200).json(sauceUpdate);
+                }
+                if (sauce.usersDisliked.includes(userId)) {
+                    const sauceUpdate = await Sauce.updateOne(
+                        {
+                            _id: sauceId
+                        },
+                        {
+                            $push: {
+                                usersLiked: userId
+                            },
+                            $inc: {
+                                dislikes: -1
+                            }
+                        }
+                    )
+                    res.status(200).json(sauceUpdate);
+                }
+            } catch (error) {
+                res.status(400).json(error);
+            }
         }
     } catch (error) {
         res.status(500).json(error);
