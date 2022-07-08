@@ -130,7 +130,7 @@ exports.setLikes = async (req, res, next) => {
                     },
                     {
                         $push: {
-                            usersLiked: userId
+                            usersDisliked: userId
                         },
                         $inc: {
                             dislikes: +1
@@ -153,7 +153,7 @@ exports.setLikes = async (req, res, next) => {
                             _id: sauceId
                         },
                         {
-                            $push: {
+                            $pull: {
                                 usersLiked: userId
                             },
                             $inc: {
@@ -169,8 +169,8 @@ exports.setLikes = async (req, res, next) => {
                             _id: sauceId
                         },
                         {
-                            $push: {
-                                usersLiked: userId
+                            $pull: {
+                                usersDisliked: userId
                             },
                             $inc: {
                                 dislikes: -1
