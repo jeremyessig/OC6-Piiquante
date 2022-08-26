@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const dotenv = require('dotenv');
 
 dotenv.config();
-
+// Ajouter une regex pour vérifier la validiter du mp et du mail
 exports.signup = (req, res, next) => {
   bcrypt.hash(req.body.password, 10)
     .then(hash => {
@@ -46,35 +46,3 @@ exports.login = (req, res, next) => {
     })
     .catch(error => res.status(500).json({ error }));
 };
-
-/**
- * CODE DE PIERRE
- * Non fonctionnel !!!
- */
-
-// exports.login = (req, res, next) => {
-//   User.findOne({ email: req.body.email })
-//     .then(user => {
-//       if (!user) {
-//         return res.status(401).json({ error: 'Utilisateur ou mot de passe inccorect' });
-//       }
-
-//       return bcrypt.compare(req.body.password, user.password);
-
-//     })
-//     .then(valid => {
-//       if (!valid) {
-//         return res.status(401).json({ error: 'Utilisateur ou mot de passe inccorect' });
-//       }
-//       res.status(200).json({
-//         userId: user._id,
-//         token: jwt.sign(
-//           { userId: user._id },
-//           //'TokenPassword',
-//           process.env.TOKEN_PASSWORD,
-//           { expiresIn: '24h' }
-//         )
-//       });
-//     })
-//     .catch(error => res.status(500).json({ error }));
-// };
