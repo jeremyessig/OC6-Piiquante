@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 // Ajouter une regex pour vérifier la validiter du mp et du mail
-exports.signup = (req, res, next) => {
+exports.signup = (req, res) => {
   bcrypt.hash(req.body.password, 10)
     .then(hash => {
       //Creation d'un nouvel utilisateur avec le modele user
@@ -21,7 +21,7 @@ exports.signup = (req, res, next) => {
 
 };
 
-exports.login = (req, res, next) => {
+exports.login = (req, res) => {
   User.findOne({ email: req.body.email })
     .then(user => {
       if (!user) {

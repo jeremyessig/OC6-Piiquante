@@ -1,11 +1,12 @@
 const Sauce = require('../models/Sauce');
 const fs = require('fs');
+const { find, findById } = require('../models/Sauce');
 
 /**
  * Renvoie toutes les sauces
  * Fonctionnel
  */
-exports.getAllSauces = async (req, res, next) => {
+exports.getAllSauces = async (req, res) => {
     try {
         let allSauces = await Sauce.find();
         res.status(200).json(allSauces);
@@ -16,10 +17,9 @@ exports.getAllSauces = async (req, res, next) => {
 }
 
 
-// Utilisateur créer une nouvelle sauce
-exports.createSauce = async (req, res, next) => {
+// Utilisateur créée une nouvelle sauce
+exports.createSauce = async (req, res) => {
     console.log("Création d'une nouvelle sauce");
-    console.log(req.body.sauce);
     const sauceObject = JSON.parse(req.body.sauce);
     const newSauce = new Sauce({
         ...sauceObject,
@@ -27,7 +27,6 @@ exports.createSauce = async (req, res, next) => {
         likes: 0,
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
     });
-    console.log(newSauce);
     try {
         const savedSauce = await newSauce.save();
         res.status(200).json(savedSauce);
@@ -38,19 +37,41 @@ exports.createSauce = async (req, res, next) => {
 }
 
 
-exports.modifySauce = (req, res, next) => {
-    console.log(req.body.sauce);
-    const sauceObject = req.file ?
-        {
+exports.modifySauce = async (req, res) => {
+    let sauceObject = null;
+
+    // Si une nouvelle images est ajoutée, on supprime l'ancienne du dossier images
+    if (req.file) {
+        sauceObject = {
             ...JSON.parse(req.body.sauce),
             imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
-        } : { ...req.body };
+        }
+        try {
+            // On récupère le chemin de l'ancienne image
+            const oldSauce = await Sauce.findById({ _id: req.params.id });
+            const filename = oldSauce.imageUrl.split('/images/')[1];
+            // On supprime l'ancienne image du dossier
+            fs.unlink(`images/${filename}`, (err) => {
+                if (err) {
+                    console.log(err)
+                }
+            });
+        } catch (error) {
+            res.status(400).json(error);
+        }
+        // Si l'image n'est pas modifiée, on conserve la même image
+    } else {
+        sauceObject = { ...req.body };
+    }
+
     Sauce.updateOne({ _id: req.params.id }, { ...sauceObject, _id: req.params.id })
         .then(() => res.status(200).json({ message: 'Objet modifié !' }))
         .catch(error => res.status(400).json({ error }));
 };
 
-exports.deleteSauce = (req, res, next) => {
+
+//Suppression d'une sauce
+exports.deleteSauce = (req, res) => {
     Sauce.findOne({ _id: req.params.id }).then(
         (sauce) => {
             if (!sauce) {
@@ -63,6 +84,7 @@ exports.deleteSauce = (req, res, next) => {
                     error: new Error('Unauthorized request!')
                 });
             }
+            // Suppression de l'image associée
             const filename = sauce.imageUrl.split('/images/')[1];
             fs.unlink(`images/${filename}`, () => {
                 Sauce.deleteOne({ _id: req.params.id })
@@ -78,7 +100,7 @@ exports.deleteSauce = (req, res, next) => {
  * Renvoie une sauce en fonction de son ID
  * Fonctionnel !
  */
-exports.getSauceById = async (req, res, next) => {
+exports.getSauceById = async (req, res) => {
     try {
         const sauce = await Sauce.findById(req.params.id);
         res.status(200).json(sauce);
@@ -87,22 +109,18 @@ exports.getSauceById = async (req, res, next) => {
     }
 }
 
-exports.setLikes = async (req, res, next) => {
+//Gestion des likes et des dislikes
+exports.setLikes = async (req, res) => {
     try {
-        // const sauce = await Sauce.findOne({ _id: req.params.id });
-        // if (!sauce) {
-        //     res.status(404).json({
-        //         error: new Error('No such Sauce!')
-        //     });
-        // }
 
         let like = req.body.like;
         let userId = req.body.userId;
         let sauceId = req.params.id;
 
-        console.log(userId);
+        // Ajout d'un like
         if (like === 1) {
             try {
+                // On récupère la sauce et on ajoute l'utilisateur dans le tableau et on incérmente le like
                 const sauceUpdate = await Sauce.updateOne(
                     {
                         _id: sauceId
@@ -120,10 +138,12 @@ exports.setLikes = async (req, res, next) => {
             } catch (error) {
                 res.status(400).json(error);
             }
-
         }
+
+        // Ajout d'un dislike
         if (like === -1) {
             try {
+                // On récupère la sauce et on ajoute l'utilisateur dans le tableau et on incérmente le dislike
                 const sauceUpdate = await Sauce.updateOne(
                     {
                         _id: sauceId
@@ -146,6 +166,7 @@ exports.setLikes = async (req, res, next) => {
 
         if (like === 0) {
             try {
+                // On récupère la sauce, on supprime'utilisateur s'il existe dans le tableau et on décrémente le like
                 const sauce = await Sauce.findOne({ _id: sauceId })
                 if (sauce.usersLiked.includes(userId)) {
                     const sauceUpdate = await Sauce.updateOne(
@@ -163,6 +184,7 @@ exports.setLikes = async (req, res, next) => {
                     )
                     res.status(200).json(sauceUpdate);
                 }
+                // On supprime'utilisateur s'il existe dans le tableau et on décrémente le dislike
                 if (sauce.usersDisliked.includes(userId)) {
                     const sauceUpdate = await Sauce.updateOne(
                         {

@@ -4,10 +4,9 @@ const dotenv = require('dotenv');
 const app = express();
 const path = require('path');
 
-// const stuffRoutes = require('./routes/stuff');
 const userRoutes = require('./routes/user');
 const sauceRoutes = require('./routes/sauce');
-// const path = require('path');
+
 
 dotenv.config();
 mongoose.connect(process.env.MONGO_URL,
@@ -32,8 +31,7 @@ app.use(express.json());
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-// //Router redirige la route vers stuffRoutes
-// app.use('/api/stuff', stuffRoutes);
+// Redirection vers les routes lors de l'appel au serveur
 app.use('/api/auth', userRoutes);
 app.use('/api', sauceRoutes);
 
